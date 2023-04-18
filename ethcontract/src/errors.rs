@@ -130,6 +130,13 @@ impl From<Web3Error> for ExecutionError {
             if let Some(err) = nethermind::get_encoded_error(jsonrpc_err) {
                 return err;
             }
+
+            // custom implementation for further abi decoding
+            if jsonrpc_err.message == "execution reverted" {
+                if let Some(data) = &jsonrpc_err.data {
+                    return ExecutionError::Revert(data.as_str().map(|x| x.to_owned()));
+                }
+            }
         }
 
         ExecutionError::Web3(err)
