@@ -45,7 +45,7 @@ impl<T: Transport> MethodBuilder<T, ()> {
             name: "fallback".into(),
             inputs: vec![],
             outputs: vec![],
-            constant: false,
+            constant: None,
             state_mutability: Default::default(),
         };
         MethodBuilder::new(web3, function, address, data)
@@ -69,6 +69,11 @@ impl<T: Transport, R: Tokenize> MethodBuilder<T, R> {
         self.tx.gas = self.tx.gas.or(defaults.gas);
         self.tx.gas_price = self.tx.gas_price.or(defaults.gas_price);
         self
+    }
+
+    /// Returns a reference to the underling ABI function for this call.
+    pub fn function(&self) -> &Function {
+        &self.function
     }
 
     /// Specify the signing method to use for the transaction, if not specified
@@ -175,6 +180,11 @@ impl<T: Transport, R: Tokenize> ViewMethodBuilder<T, R> {
         self
     }
 
+    /// Returns a reference to the underling ABI function for this call.
+    pub fn function(&self) -> &Function {
+        &self.m.function
+    }
+
     /// Specify the account the transaction is being sent from.
     pub fn from(mut self, value: Address) -> Self {
         self.m = self.m.from(Account::Local(value, None));
@@ -256,7 +266,7 @@ impl<T: Transport, R: Tokenize> ViewMethodBuilder<T, R> {
             self.m.function,
             CallRequest {
                 from: self.m.tx.from.map(|account| account.address()),
-                to: Some(self.m.tx.to.unwrap_or_default()),
+                to: self.m.tx.to,
                 gas: self.m.tx.gas,
                 gas_price: resolved_gas_price.gas_price,
                 value: self.m.tx.value,
@@ -313,7 +323,7 @@ mod tests {
                 kind: ParamType::Uint(256),
                 internal_type: None,
             }],
-            constant: false,
+            constant: None,
             state_mutability: Default::default(),
         };
         let data = function
